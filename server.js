@@ -21,7 +21,7 @@ const MessageSchema = new mongoose.Schema({
 const Message = mongoose.model("Message", MessageSchema);
 
 // 🔹 Firebase Admin SDK Setup
-const serviceAccount = require("./firebase-adminsdk.json"); // Download this from Firebase Console
+const serviceAccount = require("./mongodbnotificationapp-firebase-adminsdk-fbsvc-2bf5f90213.json");
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
 });
