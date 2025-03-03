@@ -5,13 +5,15 @@ const cors = require("cors");
 
 // 🔹 Initialize Express App
 const app = express();
-app.use(express.json());  // Enable JSON body parsing
-app.use(cors());          // Enable Cross-Origin Resource Sharing
+app.use(express.json());
+app.use(cors());
 
-// 🔹 Connect to MongoDB (Replace with your Railway MongoDB URI)
-mongoose.connect("mongodb+srv://itzrth:Roheith1979@clus.ke3bg.mongodb.net/?retryWrites=true&w=majority&appName=Clus", { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log("✅ Connected to MongoDB"))
-    .catch(err => console.error("❌ MongoDB Connection Error:", err));
+// 🔹 Connect to MongoDB (Hardcoded URI)
+mongoose.connect("mongodb+srv://itzrth:Roheith1979@clus.ke3bg.mongodb.net/?retryWrites=true&w=majority&appName=Clus", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(() => console.log("✅ Connected to MongoDB"))
+  .catch(err => console.error("❌ MongoDB Connection Error:", err));
 
 // 🔹 Define Message Schema
 const MessageSchema = new mongoose.Schema({
@@ -20,7 +22,7 @@ const MessageSchema = new mongoose.Schema({
 });
 const Message = mongoose.model("Message", MessageSchema);
 
-// 🔹 Firebase Admin SDK Setup
+// 🔹 Initialize Firebase Admin SDK (Hardcoded JSON file)
 const serviceAccount = require("./mongodbnotificationapp-firebase-adminsdk-fbsvc-2bf5f90213.json");
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
@@ -28,15 +30,19 @@ admin.initializeApp({
 
 // 🔹 API to Receive Messages from Users
 app.post("/send", async (req, res) => {
-    const { text } = req.body;
+    try {
+        const { text } = req.body;
+        if (!text) return res.status(400).json({ error: "Message text is required" });
 
-    if (!text) return res.status(400).json({ error: "Message text is required" });
-
-    const newMessage = new Message({ text });
-    await newMessage.save();
-    
-    console.log("✅ Message Saved:", text);
-    res.json({ success: true, message: "Message saved!" });
+        const newMessage = new Message({ text });
+        await newMessage.save();
+        
+        console.log("✅ Message Saved:", text);
+        res.json({ success: true, message: "Message saved!" });
+    } catch (err) {
+        console.error("❌ Error Saving Message:", err);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
 });
 
 // 🔹 Watch MongoDB for New Messages & Trigger Firebase
@@ -50,8 +56,7 @@ changeStream.on("change", async (change) => {
             notification: {
                 title: "New Message!",
                 body: newMessage.text,
-                sound: "default",
-                priority: "high"
+                sound: "default"
             },
             data: { message: newMessage.text }
         };
@@ -66,5 +71,5 @@ changeStream.on("change", async (change) => {
 });
 
 // 🔹 Start the Express Server
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
